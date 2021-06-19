@@ -1,0 +1,19 @@
+{
+    "name": "garkavenkov/selector-service",
+    "description": "Service for selecting data in Laravel",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Maksim Garkavenkov",
+            "email": "maksim.garkavenkov@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Garkavenkov\\Laravel\\SelectorService": "src/"
+        }
+    }
+}
