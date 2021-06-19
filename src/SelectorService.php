@@ -65,7 +65,7 @@ class SelectorService
 
                     if (count($values) == 1) {
                         if ($filterableFields[$field] == 'string') {
-                            $condition = "{$field} like '%values[0]%'";
+                            $condition = "{$field} like '%{$values[0]}%'";
                         } else {
                             $condition = "{$field} = $values[0]";
                         }
