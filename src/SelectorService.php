@@ -11,6 +11,7 @@ class SelectorService
         $filterableFields = $model::getFilterableFields();
 
         $relationship = $this->getRelationship($parameters);
+        $fields = $this->getFields($parameters);
         $where = $this->getWhereClause($filterableFields, $parameters);
 
         $data = $model::with($relationship);
@@ -81,5 +82,17 @@ class SelectorService
             }           
         }
         return $where;
-    }    
+    }  
+    
+    private function getFields(&$parameters)
+    {
+        $fields = '*';
+
+        if (isset($parameters['fields'])) {
+            $fields = explode(',', $parameters['fields']);
+            unset($parameters['fields']);
+        }
+
+        return $fields;
+    }
 }
