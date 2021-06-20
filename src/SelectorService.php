@@ -20,6 +20,12 @@ class SelectorService
             $data = $data->whereRaw($where);
         }
 
+        if ($sortable) {
+            foreach($sortable as $field => $order) {
+                $data = $data->orderBy($field, $order);
+            }
+        }
+
         $data = $data->get($fields);
         
         return $data;  
@@ -94,5 +100,28 @@ class SelectorService
         }
 
         return $fields;
+    }
+
+    private function getSortableFields(&$parameters)
+    {
+        $fields = [];
+
+        if (isset($parameters['sort'])) {
+            $fields = explode(',', $parameters['sort']);
+            unset($parameters['sort']);
+            
+            foreach($fields as $field) {
+
+                preg_match("/^[-](.*)/", $field, $matches);
+
+                if ($matches) {
+			        $sortable[$matches[1]] = 'DESC';
+		        } else {
+		        	$sortable[$field] = 'ASC';
+		        }
+            }
+        }
+
+        return $sortable;
     }
 }
