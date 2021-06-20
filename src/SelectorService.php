@@ -12,6 +12,8 @@ class SelectorService
 
         $relationship = $this->getRelationship($parameters);
         $fields = $this->getFields($parameters);
+        $sortable = $this->getSortableFields($parameters);
+        
         $where = $this->getWhereClause($filterableFields, $parameters);
 
         $data = $model::with($relationship);
