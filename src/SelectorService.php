@@ -106,9 +106,9 @@ class SelectorService
 
     private function getSortableFields(&$parameters)
     {
-        $fields = [];
+        $sortable = [];
 
-        if (isset($parameters['sort'])) {
+        if (isset($parameters['sort'])) {            
             $fields = explode(',', $parameters['sort']);
             unset($parameters['sort']);
             
