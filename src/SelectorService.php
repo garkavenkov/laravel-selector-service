@@ -13,6 +13,7 @@ class SelectorService
         $relationship = $this->getRelationship($parameters);
         $fields = $this->getFields($parameters);
         $sortable = $this->getSortableFields($parameters);
+        $random = $this->getRandom($parameters);
         
         $where = $this->getWhereClause($filterableFields, $parameters);
 
@@ -20,6 +21,10 @@ class SelectorService
         
         if ($where) {
             $data = $data->whereRaw($where);
+        }
+
+        if ($random) {
+            $data = $data->inRandomOrder()->limit($random);
         }
 
         if ($sortable) {
@@ -78,7 +83,11 @@ class SelectorService
                             $condition = "{$field} = $values[0]";
                         }
                     } else {
-                        $condition = "{$field} in ({$value})";
+	                if ($filterableFields[$field] == 'string') {
+                            $condition = "{$field} in ('" . implode("', '", $values) . "')";      
+                        } else {
+                            $condition = "{$field} in ({$value})";
+                        }
                     }
                 }
 
@@ -125,5 +134,17 @@ class SelectorService
         }
 
         return $sortable;
+    }
+
+    private function getRandom(&$parameters)
+    {
+        $random = null;
+
+        if (isset($parameters['get_random'])) {
+            $random = $parameters['get_random'];
+            unset($parameters['get_random']);
+        }
+        
+        return $random;
     }
 }
