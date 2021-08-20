@@ -129,11 +129,11 @@ class SelectorService
                             }
                         }
         
-                        if ($where) {
-                            $where = $where . ' and ' . $condition;
-                        } else {
-                            $where = $where . $condition;
-                        }
+                        //if ($where) {
+                        //    $where = $where . ' and ' . $condition;
+                        //} else {
+                        //    $where = $where . $condition;
+                        //}
                     }           
                 }
                 
