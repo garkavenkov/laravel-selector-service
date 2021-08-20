@@ -15,13 +15,15 @@ class SelectorService
         $sortable = $this->getSortableFields($parameters);
         $random = $this->getRandom($parameters);
         
-        $where = $this->getWhereClause($filterableFields, $parameters);
+        // $where = $this->getWhereClause($filterableFields, $parameters);
 
         $data = $model::with($relationship);
         
-        if ($where) {
-            $data = $data->whereRaw($where);
-        }
+        $data = $this->getWhereClause($data, $filterableFields, $parameters);
+
+        // if ($where) {
+        //     $data = $data->whereRaw($where);
+        // }
 
         if ($random) {
             $data = $data->inRandomOrder()->limit($random);
@@ -51,54 +53,95 @@ class SelectorService
         return $relationship;
     }
 
-    private function getWhereClause($filterableFields, &$parameters) {
-        $where  = '';
+    
+    private function getWhereClause($builder, $filterableFields, &$parameters) {
+        // $where  = '';
+        
+        if (array_key_exists('where', $parameters)) {
+            // dd($parameters['where']);
+            $conditions = explode(';',$parameters['where']);
+            // dd($conditions);
+            // foreach ($parameters as $field => $value) {
+            foreach ($conditions as $condition) {
+                // dd($condition);
 
-        foreach ($parameters as $field => $value) {
+                [$field, $value] = explode('=', $condition);
 
-            if (array_key_exists($field, $filterableFields)) {
-                
-                // field=[x,y]  -----  BETWEEN x AND Y
-                preg_match("/\[(.*)\]/", $value, $matches);
+                // dd($field, $value);
+                // Search in relationship
+                if(strpos($field,'.') > 0) {
 
-                if ($matches) {
-                    $values = explode(',', $matches[1]);
-                    
-                    if (count($values) == 1) {
-                        $condition = "{$field} between {$values[0]} and {$values[0]}";
-                    } else if (count($values) == 2) {
-                        $condition = "{$field} between {$values[0]} and {$values[1]}";
-                    } else if (count($values) > 2) {
-                        $condition = "{$field} between {$values[0]} and {$values[count($values) -1]}";
-                    }
-
-                } else {
-                    // field=x,y  ---- field IN (x,y)
-                    $values = explode(',', $value);
-
-                    if (count($values) == 1) {
-                        if ($filterableFields[$field] == 'string') {
-                            $condition = "{$field} like '%{$values[0]}%'";
-                        } else {
-                            $condition = "{$field} = $values[0]";
-                        }
+                    // dd('It\'s relationship');
+                    $parts = explode('.', $field);
+                    if (count($parts) > 2) {
+                        dd('Deep nesting search currently not supported');
                     } else {
-	                if ($filterableFields[$field] == 'string') {
-                            $condition = "{$field} in ('" . implode("', '", $values) . "')";      
-                        } else {
-                            $condition = "{$field} in ({$value})";
-                        }
+                        $builder->whereHas($parts[0], function($q) use($parts, $value) {
+                            return $q->where($parts[1], 'like', $value);
+                        });
                     }
-                }
+                    // dd($builder);
 
-                if ($where) {
-                    $where = $where . ' and ' . $condition;
                 } else {
-                    $where = $where . $condition;
+
+                    if (array_key_exists($field, $filterableFields)) {
+                    
+                        // field=[x,y]  -----  BETWEEN x AND Y
+                        preg_match("/\[(.*)\]/", $value, $matches);
+        
+                        if ($matches) {
+                            $values = explode(',', $matches[1]);
+                            
+                            if (count($values) == 1) {
+                                // $condition = "{$field} between {$values[0]} and {$values[0]}";
+                                $builder->whereBetween($field, [$values[0], $values[0]]);
+                            } else if (count($values) == 2) {
+                                // $condition = "{$field} between {$values[0]} and {$values[1]}";
+                                $builder->whereBetween($field, [$values[0], $values[1]]);
+                            } else if (count($values) > 2) {
+                                // $condition = "{$field} between {$values[0]} and {$values[count($values) -1]}";
+                                $builder->whereBetween($field, [$values[0], $values[count($values) -1]]);
+                            }
+                            
+        
+                        } else {
+                            // field=x,y  ---- field IN (x,y)
+                            $values = explode(',', $value);
+        
+                            if (count($values) == 1) {
+                                if ($filterableFields[$field] == 'string') {
+                                    // $condition = "{$field} like '%{$values[0]}%'";
+                                    $builder->where($field, 'like', "{$values[0]}");
+                                } else {
+                                    // $condition = "{$field} = $values[0]";
+                                    $builder->where($field, $values[0]);
+                                }
+                            } else {
+                                if ($filterableFields[$field] == 'string') {
+                                    // $condition = "{$field} in ('" . implode("', '", $values) . "')";      
+                                    // dd($condition, $values);
+                                    // dd(implode("', '", $values));
+                                    $builder->whereIn($field, $values);
+                                } else {
+                                    // $condition = "{$field} in ({$value})";
+                                    $builder->whereIn($field, $values);
+                                }
+                            }
+                        }
+        
+                        if ($where) {
+                            $where = $where . ' and ' . $condition;
+                        } else {
+                            $where = $where . $condition;
+                        }
+                    }           
                 }
-            }           
+                
+            }
         }
-        return $where;
+        // dd($builder);
+        // return $where;
+        return $builder;
     }  
     
     private function getFields(&$parameters)
