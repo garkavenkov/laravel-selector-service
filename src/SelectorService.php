@@ -14,16 +14,10 @@ class SelectorService
         $fields = $this->getFields($parameters);
         $sortable = $this->getSortableFields($parameters);
         $random = $this->getRandom($parameters);
+        $pagination = $this->getPagination($parameters);
         
-        // $where = $this->getWhereClause($filterableFields, $parameters);
-
-        $data = $model::with($relationship);
-        
+        $data = $model::with($relationship);        
         $data = $this->getWhereClause($data, $filterableFields, $parameters);
-
-        // if ($where) {
-        //     $data = $data->whereRaw($where);
-        // }
 
         if ($random) {
             $data = $data->inRandomOrder()->limit($random);
@@ -35,7 +29,12 @@ class SelectorService
             }
         }
 
-        $data = $data->get($fields);
+        if ($pagination) {
+            $data = $data->paginate($pagination);
+            $data->appends(request()->query())->links();
+        } else {
+            $data = $data->get($fields);
+        }
         
         return $data;  
     }
@@ -177,6 +176,17 @@ class SelectorService
         }
 
         return $sortable;
+    }
+
+    private function getPagination(&$parameters)
+    {
+        $per_page = null;
+        
+        if (isset($parameters['paginate'])) {
+            $per_page = $parameters['paginate'];
+            unset($parameters['paginate']);
+        }
+        return $per_page;
     }
 
     private function getRandom(&$parameters)
