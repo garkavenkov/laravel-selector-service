@@ -15,8 +15,16 @@ class SelectorService
         $sortable = $this->getSortableFields($parameters);
         $random = $this->getRandom($parameters);
         $pagination = $this->getPagination($parameters);
+        $scopes = $this->getScopes($parameters);
         
-        $data = $model::with($relationship);        
+        $data = $model::with($relationship); 
+                
+        if ($scopes) {            
+            foreach($scopes as $scope) {
+                $data = $data->$scope();
+            }            
+        }
+
         $data = $this->getWhereClause($data, $filterableFields, $parameters);
 
         if ($random) {
@@ -199,5 +207,17 @@ class SelectorService
         }
         
         return $random;
+    }
+
+    private function getScopes(&$parameters)
+    {
+        $scopes = [];
+
+        if (isset($parameters['scope'])) {
+            $scopes = explode(',', $parameters['scope']);                        
+            unset($parameters['scope']);
+        }
+
+        return $scopes;
     }
 }
