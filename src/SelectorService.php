@@ -14,7 +14,8 @@ class SelectorService
         $fields = $this->getFields($parameters);
         $sortable = $this->getSortableFields($parameters);
         $random = $this->getRandom($parameters);
-        $pagination = $this->getPagination($parameters);
+        $perPage = $this->getPerPage($parameters);
+        $pageNumber = $this->getPageNumber($parameters);
         $scopes = $this->getScopes($parameters);
         
         $data = $model::with($relationship); 
@@ -37,8 +38,8 @@ class SelectorService
             }
         }
 
-        if ($pagination) {
-            $data = $data->paginate($pagination);
+        if ($perPage) {            
+            $data = $data->paginate(perPage: $perPage, page: $pageNumber);            
             $data->appends(request()->query())->links();
         } else {
             $data = $data->get($fields);
@@ -47,8 +48,13 @@ class SelectorService
         return $data;  
     }
 
-
-    private function getRelationship(&$parameters)
+    /**
+     * Get relationship(s) list
+     *
+     * @param array $parameters Request query parameters
+     * @return array            Array of relatioship(s)
+     */
+    private function getRelationship(array &$parameters): array
     {
         $relationship = [];
 
@@ -60,7 +66,7 @@ class SelectorService
         return $relationship;
     }
 
-    
+        
     private function getWhereClause($builder, $filterableFields, &$parameters) {
         // $where  = '';
         
@@ -81,7 +87,8 @@ class SelectorService
                     // dd('It\'s relationship');
                     $parts = explode('.', $field);
                     if (count($parts) > 2) {
-                        dd('Deep nesting search currently not supported');
+                        // Deep nesting not ready yet.
+                        // dd('Deep nesting search currently not supported');                        
                     } else {
                         $builder->whereHas($parts[0], function($q) use($parts, $value) {
                             return $q->where($parts[1], 'like', $value);
@@ -151,7 +158,13 @@ class SelectorService
         return $builder;
     }  
     
-    private function getFields(&$parameters)
+    /**
+     * Get list of returning fields in result set
+     *
+     * @param array $parameters Request query parameters
+     * @return string|array     Array of fields, or '*' (all fields) as default
+     */
+    private function getFields(array &$parameters): string|array
     {
         $fields = '*';
 
@@ -163,7 +176,13 @@ class SelectorService
         return $fields;
     }
 
-    private function getSortableFields(&$parameters)
+    /**
+     * Get fields list for sorting
+     *
+     * @param array $parameters Request query parameters
+     * @return array            Array of sorting fields
+     */
+    private function getSortableFields(array &$parameters): array
     {
         $sortable = [];
 
@@ -186,18 +205,47 @@ class SelectorService
         return $sortable;
     }
 
-    private function getPagination(&$parameters)
+    /**
+     * Get per page records count for pagionation
+     *
+     * @param array $parameters Request query parameters
+     * @return integer|null     Per page records
+     */
+    private function getPerPage(array &$parameters): ?int
     {
         $per_page = null;
         
-        if (isset($parameters['paginate'])) {
-            $per_page = $parameters['paginate'];
-            unset($parameters['paginate']);
+        if (isset($parameters['per_page'])) {
+            $per_page = $parameters['per_page'];
+            unset($parameters['per_page']);
         }
         return $per_page;
     }
 
-    private function getRandom(&$parameters)
+    /**
+     * Get page number for pagination. If parameter is null, return 1 as default
+     *
+     * @param array $parameters Request query parameters
+     * @return integer          Page number
+     */
+    private function getPageNumber(array &$parameters): int
+    {
+        $page_number = 1;
+        
+        if (isset($parameters['page'])) {
+            $page_number = $parameters['page'];
+            unset($parameters['page']);
+        }
+        return $page_number;
+    }
+
+    /**
+     * Get random number for returning record set
+     *
+     * @param array $parameters Request query parameters
+     * @return integer|null     Number of returning records
+     */
+    private function getRandom(array &$parameters): ?int
     {
         $random = null;
 
@@ -209,7 +257,13 @@ class SelectorService
         return $random;
     }
 
-    private function getScopes(&$parameters)
+    /**
+     * Get scopes list
+     *
+     * @param array $parameters Request query paramters
+     * @return array            Array of scope(s)
+     */
+    private function getScopes(array &$parameters): array
     {
         $scopes = [];
 
